@@ -1,33 +1,20 @@
-# PS2 Keyboard driver for AVR based microcontrollers.
+# PS2_BASE Common comms interface.
 
-## Sample Code
+Uses pin change interrupt to send/receive data. Used with keyboard or mouse devices.
 
-```c
-#include <inttypes.h>
-#include <avr/common.h>
-#include <avr/io.h>
+author: Jay Convertino
 
-#include "ps2PORTBirq.h"
-#include "ps2Keyboard.h"
+data: 2024.03.16
 
-void recvCallback(uint8_t recvBuffer);
+license: MIT
 
-int main(void)
-{
-	DDRD = ~0;
+## Release Versions
+### Past
+  - none
 
-	PORTD = 0;
+## Requirements
+  - avr-gcc
+  - avrlibc
 
-	initPS2keyboard(&recvCallback, &PORTB, PORTB0, PORTB1);
-
-	for(;;)
-	{
-		updatePS2leds();
-	}
-}
-
-void recvCallback(uint8_t recvBuffer)
-{
-	PORTD = recvBuffer;
-}
-```
+## Building
+  - make : builds all
