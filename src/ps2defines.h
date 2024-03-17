@@ -46,6 +46,17 @@ enum dataStates {send, recv, ck_ack, idle};
 #define STOP_BIT_POS    10
 #define STOP_BIT_VALUE  1
 
+//common commands/responses
+#define CMD_DEV_RDY       0xAA
+#define CMD_RESET         0xFF
+#define CMD_ACK           0xFA
+#define CMD_RESEND        0xFE
+#define CMD_DEFAULT       0xF6
+#define CMD_DISABLE       0xF5
+#define CMD_ENABLE        0xF4
+#define CMD_SET_RATE      0xF3
+#define CMD_READ_ID       0xF2
+
 #define MESSAGE_LENGTH 10
 
 #endif
