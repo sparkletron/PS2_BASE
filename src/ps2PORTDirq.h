@@ -52,6 +52,8 @@ ISR(PCINT2_vect)
 {
   if(p_ps2Portd == NULL) return;
 
+  if(p_ps2Portd->recvCallback == NULL) return;
+
   uint8_t pinState = (*(p_ps2Portd->p_port - 2) & (1 << p_ps2Portd->clkPin)) >> p_ps2Portd->clkPin;
 
   switch(p_ps2Portd->dataState)
@@ -73,6 +75,7 @@ ISR(PCINT2_vect)
           //set port to input.
           *(p_ps2Portd->p_port - 1) &= ~(1 << p_ps2Portd->dataPin);
           p_ps2Portd->index = 0;
+          p_ps2Portd->buffer = 0;
           p_ps2Portd->dataState = ck_ack;
         }
       }
