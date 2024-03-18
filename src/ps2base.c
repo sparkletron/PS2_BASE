@@ -205,4 +205,6 @@ void startTransmit(struct s_ps2 *p_ps2)
   *(p_ps2->p_port - 1) &= ~(1 << p_ps2->clkPin);
 
   p_ps2->index++;
+
+  _delay_us(10);
 }
