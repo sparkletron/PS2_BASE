@@ -39,6 +39,7 @@ typedef void (*t_PS2recvCallback)(uint16_t recvBuffer);
 typedef void (*t_PS2userRecvCallback)(uint8_t recvBuffer);
 enum ackStates {ack, noack};
 enum dataStates {send, recv, ck_ack, idle};
+enum callbackStates {waiting, no_cmd, resend_cmd, ack_cmd, ready_cmd, dev_id};
 
 //bit stuff
 #define PARITY_BIT_POS  9

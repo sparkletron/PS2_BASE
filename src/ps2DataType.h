@@ -45,6 +45,9 @@ struct s_ps2
 
   volatile enum ackStates lastAckState;
   volatile enum dataStates dataState;
+  volatile enum callbackStates callbackState;
+
+  uint8_t lastCMD;
 
   volatile uint8_t index;
 
@@ -52,6 +55,9 @@ struct s_ps2
 
   t_PS2userRecvCallback userRecvCallback;
   t_PS2recvCallback recvCallback;
+
+  t_PS2recvCallback responseCallback;
+  t_PS2recvCallback callUserCallback;
 };
 
 #endif /* PS2DATATYPE_H_ */
