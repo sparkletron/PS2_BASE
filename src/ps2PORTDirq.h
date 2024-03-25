@@ -41,42 +41,68 @@
 #include "ps2DataType.h"
 #include "ps2defines.h"
 
-struct s_ps2 *p_ps2Portd;
+volatile uint8_t prevPortPins_portd = 0;
+volatile uint8_t portMask_portd = 0;
+volatile uint8_t numOfdevs_portd = 0;
+
+struct s_ps2 *p_ps2Portd[MAX_NUMBER_OF_DEVS] = {NULL};
 
 void setPS2_PORTD_Device(struct s_ps2 *p_device)
 {
-  p_ps2Portd = p_device;
+  if(numOfdevs_portd < MAX_NUMBER_OF_DEVS)
+  {
+    p_ps2Portd[numOfdevs_portd] = p_device;
+    portMask_portd |= (1 << p_ps2Portd[numOfdevs_portd]->clkPin);
+    prevPortPins_portd = *(p_ps2Portd[numOfdevs_portd]->p_port - 2) & portMask_portd;
+
+    numOfdevs_portd++;
+  }
 }
 
 ISR(PCINT2_vect)
 {
-  if(p_ps2Portd == NULL) return;
+  uint8_t index = 0;
 
-  if(p_ps2Portd->recvCallback == NULL) return;
+  if(p_ps2Portd[index] == NULL) return;
 
-  uint8_t pinState = (*(p_ps2Portd->p_port - 2) & (1 << p_ps2Portd->clkPin)) >> p_ps2Portd->clkPin;
+  if(p_ps2Portd[index]->recvCallback == NULL) return;
 
-  switch(p_ps2Portd->dataState)
+  if(prevPortPins_portd == (*(p_ps2Portd[0]->p_port - 2) & portMask_portd)) return;
+
+//   check all of the devices, and if there is a difference on the pin interrupt in question break the loop and use that index
+//   this is lowest number is highest priority.
+  for(index = 0; index < numOfdevs_portd; index++)
+  {
+    if((*(p_ps2Portd[0]->p_port - 2) & (1 << p_ps2Portd[index]->clkPin)) != (prevPortPins_portd &  (1 << p_ps2Portd[index]->clkPin))) break;
+  }
+
+  prevPortPins_portd = (*(p_ps2Portd[0]->p_port - 2) & portMask_portd);
+
+  if(index >= numOfdevs_portd) return;
+
+  uint8_t pinState = (*(p_ps2Portd[index]->p_port - 2) & (1 << p_ps2Portd[index]->clkPin)) >> p_ps2Portd[index]->clkPin;
+
+  switch(p_ps2Portd[index]->dataState)
   {
     case(send):
       //falling edge
       if(pinState == 0)
       {
-        uint8_t portValue = (p_ps2Portd->buffer >> p_ps2Portd->index) & 0x0001;
+        uint8_t portValue = (p_ps2Portd[index]->buffer >> p_ps2Portd[index]->index) & 0x0001;
 
         //set data on output pin
-        *p_ps2Portd->p_port |= (portValue << p_ps2Portd->dataPin);
-        *p_ps2Portd->p_port &= (portValue << p_ps2Portd->dataPin) | ~(1 << p_ps2Portd->dataPin);
+        *p_ps2Portd[index]->p_port |= (portValue << p_ps2Portd[index]->dataPin);
+        *p_ps2Portd[index]->p_port &= (portValue << p_ps2Portd[index]->dataPin) | ~(1 << p_ps2Portd[index]->dataPin);
 
-        p_ps2Portd->index++;
+        p_ps2Portd[index]->index++;
 
-        if(p_ps2Portd->index > MESSAGE_LENGTH)
+        if(p_ps2Portd[index]->index > MESSAGE_LENGTH)
         {
           //set port to input.
-          *(p_ps2Portd->p_port - 1) &= ~(1 << p_ps2Portd->dataPin);
-          p_ps2Portd->index = 0;
-          p_ps2Portd->buffer = 0;
-          p_ps2Portd->dataState = ck_ack;
+          *(p_ps2Portd[index]->p_port - 1) &= ~(1 << p_ps2Portd[index]->dataPin);
+          p_ps2Portd[index]->index = 0;
+          p_ps2Portd[index]->buffer = 0;
+          p_ps2Portd[index]->dataState = ck_ack;
         }
       }
       break;
@@ -85,37 +111,37 @@ ISR(PCINT2_vect)
       if(pinState == 0)
       {
         //if its one, set to no ack, 0 ack(done)
-        p_ps2Portd->lastAckState = (((*(p_ps2Portd->p_port - 2) >> p_ps2Portd->dataPin) & 0x01) ? noack : ack);
+        p_ps2Portd[index]->lastAckState = (((*(p_ps2Portd[index]->p_port - 2) >> p_ps2Portd[index]->dataPin) & 0x01) ? noack : ack);
 
-        p_ps2Portd->dataState = idle;
+        p_ps2Portd[index]->dataState = idle;
       }
       break;
     case(idle):
       //rising edge is not a correct start of recv from idle
       if(pinState == 1) break;
 
-      p_ps2Portd->dataState = recv;
+      p_ps2Portd[index]->dataState = recv;
     case(recv):
       //falling edge
       if(pinState == 0)
       {
         //get data from input pin and buffer
-        p_ps2Portd->buffer |= ((*(p_ps2Portd->p_port - 2) >> p_ps2Portd->dataPin) & 0x01) << p_ps2Portd->index;
+        p_ps2Portd[index]->buffer |= ((*(p_ps2Portd[index]->p_port - 2) >> p_ps2Portd[index]->dataPin) & 0x01) << p_ps2Portd[index]->index;
 
-        p_ps2Portd->index++;
+        p_ps2Portd[index]->index++;
 
         //one we have all the data, process data and clear
-        if(p_ps2Portd->index > MESSAGE_LENGTH)
+        if(p_ps2Portd[index]->index > MESSAGE_LENGTH)
         {
-          p_ps2Portd->recvCallback(p_ps2Portd->buffer);
-          p_ps2Portd->buffer = 0;
-          p_ps2Portd->index = 0;
-          p_ps2Portd->dataState = idle;
+          p_ps2Portd[index]->recvCallback(p_ps2Portd[index]->buffer);
+          p_ps2Portd[index]->buffer = 0;
+          p_ps2Portd[index]->index = 0;
+          p_ps2Portd[index]->dataState = idle;
         }
       }
       break;
     default:
-      p_ps2Portd->dataState = idle;
+      p_ps2Portd[index]->dataState = idle;
       break;
   }
 }

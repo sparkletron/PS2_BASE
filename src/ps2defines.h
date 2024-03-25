@@ -41,6 +41,8 @@ enum ackStates {ack, noack};
 enum dataStates {send, recv, ck_ack, idle};
 enum callbackStates {waiting, no_cmd, resend_cmd, ack_cmd, ready_cmd, dev_id};
 
+#define MAX_NUMBER_OF_DEVS 4
+
 //bit stuff
 #define PARITY_BIT_POS  9
 #define DATA_BIT0_POS   1
