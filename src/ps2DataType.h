@@ -53,6 +53,8 @@ struct s_ps2
 
   volatile uint16_t buffer;
 
+  void *p_device;
+
   t_PS2userRecvCallback userRecvCallback;
   t_PS2recvCallback recvCallback;
 

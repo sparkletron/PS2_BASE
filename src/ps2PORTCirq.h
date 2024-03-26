@@ -133,7 +133,7 @@ ISR(PCINT1_vect)
         //one we have all the data, process data and clear
         if(p_ps2Portc[index]->index > MESSAGE_LENGTH)
         {
-          p_ps2Portc[index]->recvCallback(p_ps2Portc[index]->buffer);
+          p_ps2Portc[index]->recvCallback(p_ps2Portc[index], p_ps2Portc[index]->buffer);
           p_ps2Portc[index]->buffer = 0;
           p_ps2Portc[index]->index = 0;
           p_ps2Portc[index]->dataState = idle;

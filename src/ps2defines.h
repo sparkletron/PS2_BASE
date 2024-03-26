@@ -35,7 +35,7 @@
 #ifndef PS2_DEFINES
 #define PS2_DEFINES
 
-typedef void (*t_PS2recvCallback)(uint16_t recvBuffer);
+typedef void (*t_PS2recvCallback)(void *p_data, uint16_t recvBuffer);
 typedef void (*t_PS2userRecvCallback)(uint8_t recvBuffer);
 enum ackStates {ack, noack};
 enum dataStates {send, recv, ck_ack, idle};
